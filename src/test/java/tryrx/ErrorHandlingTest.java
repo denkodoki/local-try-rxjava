@@ -1,10 +1,11 @@
 package tryrx;
 
-import debug.Logger;
 import org.junit.Test;
 import rx.Observable;
-import rx.Subscription;
 import rx.functions.Func1;
+
+import static debug.Logger.println;
+import static debug.Logger.printlnError;
 
 public class ErrorHandlingTest {
     private static final String OOPS = "Oops!";
@@ -15,7 +16,8 @@ public class ErrorHandlingTest {
         Observable<Integer> fallBackStream = Observable.range(1, 3);
         failingStream
                 .onExceptionResumeNext(fallBackStream)
-                .doOnNext(Logger.println("message :"))
+                .doOnNext(println("message :"))
+                .doOnError(printlnError("error: "))
                 .subscribe();
     }
 
@@ -28,7 +30,8 @@ public class ErrorHandlingTest {
                 return throwable.toString();
             }
         })
-                .doOnNext(Logger.println("returned :"))
+                .doOnNext(println("returned :"))
+                .doOnError(printlnError("error: "))
                 .subscribe();
     }
 
@@ -38,7 +41,8 @@ public class ErrorHandlingTest {
         Observable<String> fallBackStream = Observable.just("B", "C");
         failingStream
                 .onErrorResumeNext(fallBackStream)
-                .doOnNext(Logger.println("returned :"))
+                .doOnNext(println("returned: "))
+                .doOnError(printlnError("error: "))
                 .subscribe();
     }
 
@@ -54,9 +58,20 @@ public class ErrorHandlingTest {
                 return OOPS.equals(throwable.getMessage()) ? fallBackStream : terminatingStream;
             }
         };
-        Subscription subscribe = failingStream.cast(Object.class)
+        failingStream.cast(Object.class)
                 .onErrorResumeNext(resumeSelector)
-                .doOnNext(Logger.println("returned :"))
+                .doOnNext(println("returned: "))
+                .doOnError(printlnError("error: "))
+                .subscribe();
+    }
+
+    @Test
+    public void retryNTimesTest() {
+        Observable<Object> failingStream = Observable.error(new RuntimeException(OOPS)).startWith("A");
+        failingStream
+                .retry(2)
+                .doOnNext(println("returned: "))
+                .doOnError(printlnError("error: "))
                 .subscribe();
     }
 }

@@ -12,4 +12,14 @@ public enum Logger {
             }
         };
     }
+
+    public static Action1<Throwable> printlnError(final String prefix) {
+        return new Action1<Throwable>() {
+
+            @Override
+            public void call(final Throwable throwable) {
+                System.out.println(Thread.currentThread().getName() + "; " + prefix + throwable);
+            }
+        };
+    }
 }
